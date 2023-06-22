@@ -15,14 +15,15 @@ on:
   workflow_dispatch: {}
 
 env:
-  AWS_DEFAULT_REGION: eu-west-1
-  AWS_S3_BUCKET_NAME: tensorflow-ci-1
-  AWS_IAM_PROFILE: Proj-s3-orta-vht-role
-  AWS_SECURITY_GROUP_ID: sg-03afe5ec007b4bcb0
-  AWS_SUBNET_ID: subnet-025b7baebd743a68b
+  ARMLMD_LICENSE_FILE: /opt/data.dat
+  ARM_TOOL_VARIANT: ult
+  AC6_TOOLCHAIN_6_18_0: /opt/armcompiler/bin
+  LD_LIBRARY_PATH: /opt/VHT
+  AVH_PATH: /opt/VHT
+
 jobs:
   cortex_m_generic:
-    runs-on: ubuntu-latest
+    runs-on: AVH-Runner
     permissions:
       id-token: write
       contents: read
@@ -36,20 +37,9 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
-      - name: Install AVH Client for Python
-        run: |
-          pip install git+https://github.com/ARM-software/avhclient.git@v0.1
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::720528183931:role/Proj-vht-assume-role
-          aws-region: eu-west-1
-      - name: Execute test suite on Arm Virtual Hardware at AWS
-        run: |
-          avhclient -b aws execute --specfile ./tensorflow/lite/micro/tools/github/arm_virtual_hardware/cortex_m_generic_avh.yml
-      - name: Fetch results from Arm Virtual Hardware
-        run: |
-          cat ./tensorflow/lite/micro/tools/github/arm_virtual_hardware/cortex_m_generic.log
+      - name: Build and execute tests
+          mv ./tflite-micro/tensorflow/ .
+          tensorflow/lite/micro/tools/ci_build/test_cortex_m_generic.sh armclang
 
 
   cortex_m_corstone_300:
@@ -62,19 +52,6 @@ jobs:
       - uses: actions/checkout@v2
       - name: Set up Python 3.10
         uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::720528183931:role/Proj-vht-assume-role
-          aws-region: eu-west-1
-      - name: Install AVH Client for Python
-        run: |
-          pip install git+https://github.com/ARM-software/avhclient.git@v0.1.1
-      - name: Execute test suite on Arm Virtual Hardware at AWS
-        run: |
-          avhclient -b aws execute --specfile ./tensorflow/lite/micro/tools/github/arm_virtual_hardware/cortex_m_corstone_300_avh.yml
-      - name: Fetch results from Arm Virtual Hardware
-        run: |
-          cat ./tensorflow/lite/micro/tools/github/arm_virtual_hardware/corstone300.log
+      - name: Build and execute Armclang tests
+          mv ./tflite-micro/tensorflow/ .
+          tensorflow/lite/micro/tools/ci_build/test_cortex_m_generic.sh armclang      
